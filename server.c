@@ -20,9 +20,6 @@ int main()
     pid_t pid;
     char buf[BUF_LENGTH];
     ssize_t bytesRead;
-    int file;
-    ssize_t bytesSent = 1;
-    off_t offset = 0;
 
     memset(buf, 0, BUF_LENGTH * sizeof(char));
 
@@ -72,19 +69,26 @@ int main()
         }
 
         recv(clientSocket, buf, BUF_LENGTH, 0);
-
-        file = open(buf, O_RDONLY);
-        if (file < 0)
+        pid = fork();
+        if (pid == 0)
         {
-            printf("Error while opening file\n");
-        }
+            int file;
+            ssize_t bytesSent = 1;
+            off_t offset = 0;
 
-        do {
-	    bytesRead = read(file, buf, BUF_LENGTH);
-            bytesSent = write(clientSocket, buf, bytesRead);
-        } while (bytesSent > 0);
-        close(file);
-        shutdown(clientSocket, SHUT_RDWR);
+            file = open(buf, O_RDONLY);
+            if (file < 0)
+            {
+                printf("Error while opening file\n");
+            }
+
+            do {
+		bytesRead = read(file, buf, BUF_LENGTH);
+                bytesSent = write(clientSocket, buf, bytesRead);
+            } while (bytesSent > 0);
+            close(file);
+            shutdown(clientSocket, SHUT_RDWR);
+        }
     }
 
     shutdown(serverSocket, SHUT_RDWR);
